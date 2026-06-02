@@ -11,15 +11,24 @@ export interface UserSummary {
   createdAt: string;
   entrepreneurProfile?: {
     companyName?: string;
+    tagline?: string;
     industry?: string;
+    location?: string;
+    foundedYear?: number;
     fundingStage?: string;
+    fundingAmount?: string;
+    fundingTarget?: string;
+    teamSize?: number;
+    teamDescription?: string;
     pitchDeck?: string;
     businessPlan?: string;
   } | null;
   investorProfile?: {
     investmentFocus: string[];
+    investmentStage: string[];
     ticketSize?: string;
     portfolioCompanies: number;
+    location?: string;
   } | null;
   socialLinks?: {
     linkedin?: string;
