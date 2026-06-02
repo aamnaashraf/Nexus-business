@@ -54,9 +54,9 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
         await documentAPI.getUploadSignature();
 
       // Step 2 — upload directly to Cloudinary (bypasses Vercel body limits)
-      const isImage = file.type.startsWith('image/');
-      const resourceType = isImage ? 'image' : 'raw';
-      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+      // Use /auto/upload so Cloudinary detects the resource type — avoids
+      // CORS preflight differences between /image/upload and /raw/upload.
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
       const cloudForm = new FormData();
       cloudForm.append('file', file);
@@ -87,7 +87,11 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
       setVisibility('PRIVATE');
       setFile(null);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || error.message || 'Failed to upload document');
+      const msg = error.response?.data?.error?.message
+        || error.response?.data?.message
+        || error.message
+        || 'Failed to upload document';
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
