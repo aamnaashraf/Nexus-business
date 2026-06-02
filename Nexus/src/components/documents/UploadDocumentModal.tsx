@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { X, Upload, FileText } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -65,8 +64,14 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
       cloudForm.append('signature', signature);
       cloudForm.append('folder', folder);
 
-      const cloudRes = await axios.post(cloudinaryUrl, cloudForm);
-      const { secure_url, bytes } = cloudRes.data;
+      // Use native fetch — Axios adds headers that cause CORS issues for
+      // non-image MIME types (e.g. application/pdf) on the Cloudinary API.
+      const cloudRes = await fetch(cloudinaryUrl, { method: 'POST', body: cloudForm });
+      if (!cloudRes.ok) {
+        const errData = await cloudRes.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Cloudinary error ${cloudRes.status}`);
+      }
+      const { secure_url, bytes } = await cloudRes.json();
 
       // Step 3 — save metadata to backend (small JSON, no file)
       await documentAPI.saveDocument({
