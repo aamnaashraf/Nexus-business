@@ -56,8 +56,15 @@ model EntrepreneurProfile {
   userId          String   @unique
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   companyName     String?
+  tagline         String?
   industry        String?
+  location        String?
+  foundedYear     Int?
   fundingStage    String?
+  fundingAmount   String?
+  fundingTarget   String?
+  teamSize        Int?
+  teamDescription String?
   pitchDeck       String?
   businessPlan    String?
   createdAt       DateTime @default(now())
@@ -67,14 +74,16 @@ model EntrepreneurProfile {
 }
 
 model InvestorProfile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  investmentFocus   String[]
-  ticketSize        String?
-  portfolioCompanies Int     @default(0)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investmentFocus    String[]
+  investmentStage    String[]
+  ticketSize         String?
+  portfolioCompanies Int      @default(0)
+  location           String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@map("investor_profiles")
 }

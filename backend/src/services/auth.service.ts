@@ -43,15 +43,24 @@ interface UpdateProfileData {
   };
   entrepreneurProfile?: {
     companyName?: string;
+    tagline?: string;
     industry?: string;
+    location?: string;
+    foundedYear?: number;
     fundingStage?: string;
+    fundingAmount?: string;
+    fundingTarget?: string;
+    teamSize?: number;
+    teamDescription?: string;
     pitchDeck?: string;
     businessPlan?: string;
   };
   investorProfile?: {
     investmentFocus?: string[];
+    investmentStage?: string[];
     ticketSize?: string;
     portfolioCompanies?: number;
+    location?: string;
   };
 }
 
@@ -238,8 +247,10 @@ export class AuthService {
         create: {
           userId,
           investmentFocus: investorProfile.investmentFocus ?? [],
+          investmentStage: investorProfile.investmentStage ?? [],
           ticketSize: investorProfile.ticketSize,
           portfolioCompanies: investorProfile.portfolioCompanies ?? 0,
+          location: investorProfile.location,
         },
       });
     }
