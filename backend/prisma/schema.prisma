@@ -1,0 +1,241 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password      String
+  firstName     String
+  lastName      String
+  role          UserRole
+  profileImage  String?
+  bio           String?
+  verified      Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Profile Relations
+  entrepreneurProfile EntrepreneurProfile?
+  investorProfile     InvestorProfile?
+  
+  // Profile fields
+  startupHistories    StartupHistory[]
+  investmentHistories InvestmentHistory[]
+  preferences         UserPreferences?
+  socialLinks         SocialLinks?
+
+  walletBalance Float @default(0)
+
+  // Future modules
+  investorMeetings      Meeting[]        @relation("InvestorMeetings")
+  entrepreneurMeetings  Meeting[]        @relation("EntrepreneurMeetings")
+  documents        Document[]
+  sentPayments     Payment[]        @relation("SentPayments")
+  receivedPayments Payment[]        @relation("ReceivedPayments")
+  sentMessages  Message[]        @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+
+  @@map("users")
+}
+
+enum UserRole {
+  ENTREPRENEUR
+  INVESTOR
+  ADMIN
+}
+
+model EntrepreneurProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName     String?
+  industry        String?
+  fundingStage    String?
+  pitchDeck       String?
+  businessPlan    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("entrepreneur_profiles")
+}
+
+model InvestorProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investmentFocus   String[]
+  ticketSize        String?
+  portfolioCompanies Int     @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("investor_profiles")
+}
+
+model StartupHistory {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String
+  position    String?
+  startDate   DateTime
+  endDate     DateTime?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("startup_histories")
+}
+
+model InvestmentHistory {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName     String
+  amount          Float
+  currency        String   @default("USD")
+  investmentDate  DateTime @default(now())
+  description     String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("investment_histories")
+}
+
+model UserPreferences {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications Boolean @default(true)
+  pushNotifications  Boolean @default(true)
+  theme            String   @default("light")
+  language         String   @default("en")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("user_preferences")
+}
+
+model SocialLinks {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedin    String?
+  twitter     String?
+  website     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("social_links")
+}
+
+model Meeting {
+  id              String        @id @default(uuid())
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  status          MeetingStatus @default(PENDING)
+  meetingLink     String?
+  createdById     String
+  investorId      String
+  investor        User          @relation("InvestorMeetings", fields: [investorId], references: [id], onDelete: Cascade)
+  entrepreneurId  String
+  entrepreneur    User          @relation("EntrepreneurMeetings", fields: [entrepreneurId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@map("meetings")
+}
+
+enum MeetingStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  CANCELLED
+}
+
+model Document {
+  id            String         @id @default(uuid())
+  title         String
+  description   String?
+  fileUrl       String
+  fileType      String
+  fileSize      Int
+  version       Int            @default(1)
+  status        DocumentStatus @default(PENDING)
+  signatureUrl  String?
+  uploadedBy    String
+  user          User           @relation(fields: [uploadedBy], references: [id], onDelete: Cascade)
+  visibility    Visibility     @default(PRIVATE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("documents")
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SIGNED
+}
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+  SHARED
+}
+
+enum PaymentType {
+  DEPOSIT
+  WITHDRAWAL
+  TRANSFER
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+model Payment {
+  id                    String        @id @default(uuid())
+  amount                Float
+  currency              String        @default("USD")
+  type                  PaymentType
+  status                PaymentStatus @default(PENDING)
+  description           String?
+  stripePaymentIntentId String?       @unique
+
+  senderId   String?
+  sender     User?   @relation("SentPayments", fields: [senderId], references: [id], onDelete: SetNull)
+  receiverId String?
+  receiver   User?   @relation("ReceivedPayments", fields: [receiverId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payments")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  content    String
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("messages")
+}
