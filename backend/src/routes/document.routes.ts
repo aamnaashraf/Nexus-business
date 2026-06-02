@@ -23,6 +23,8 @@ import {
   deleteDocument,
   viewDocument,
   downloadDocument,
+  getUploadSignature,
+  saveDocument,
 } from '../controllers/document.controller';
 
 const router = Router();
@@ -44,6 +46,10 @@ router.post(
   validate(createDocumentValidator),
   uploadDocument
 );
+
+// Direct-upload flow (frontend uploads to Cloudinary, backend saves metadata)
+router.get('/sign-upload', getUploadSignature);
+router.post('/save', saveDocument);
 
 // Get my documents
 router.get('/my-documents', getMyDocuments);

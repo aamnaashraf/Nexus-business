@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import { X, Upload, FileText } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
@@ -37,38 +38,56 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!file) {
-      toast.error('Please select a file to upload');
-      return;
-    }
+    if (!file) { toast.error('Please select a file to upload'); return; }
+    if (!title.trim()) { toast.error('Please enter a document title'); return; }
 
-    if (!title.trim()) {
-      toast.error('Please enter a document title');
+    if (file.size > 4 * 1024 * 1024) {
+      toast.error('File is too large. Maximum size is 4MB');
       return;
     }
 
     try {
       setIsLoading(true);
 
-      const formData = new FormData();
-      formData.append('document', file);
-      formData.append('title', title);
-      if (description) formData.append('description', description);
-      formData.append('visibility', visibility);
+      // Step 1 — get a signed upload credential from the backend
+      const { signature, timestamp, cloudName, apiKey, folder } =
+        await documentAPI.getUploadSignature();
 
-      await documentAPI.uploadDocument(formData);
+      // Step 2 — upload directly to Cloudinary (bypasses Vercel body limits)
+      const isImage = file.type.startsWith('image/');
+      const resourceType = isImage ? 'image' : 'raw';
+      const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`;
+
+      const cloudForm = new FormData();
+      cloudForm.append('file', file);
+      cloudForm.append('api_key', apiKey);
+      cloudForm.append('timestamp', String(timestamp));
+      cloudForm.append('signature', signature);
+      cloudForm.append('folder', folder);
+
+      const cloudRes = await axios.post(cloudinaryUrl, cloudForm);
+      const { secure_url, bytes } = cloudRes.data;
+
+      // Step 3 — save metadata to backend (small JSON, no file)
+      await documentAPI.saveDocument({
+        title: title.trim(),
+        description: description.trim() || undefined,
+        fileUrl: secure_url,
+        fileType: file.type,
+        fileSize: bytes,
+        visibility,
+      });
 
       toast.success('Document uploaded successfully!');
       onClose();
       if (onSuccess) onSuccess();
 
-      // Reset form
       setTitle('');
       setDescription('');
       setVisibility('PRIVATE');
       setFile(null);
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to upload document');
+      toast.error(error.response?.data?.message || error.message || 'Failed to upload document');
     } finally {
       setIsLoading(false);
     }

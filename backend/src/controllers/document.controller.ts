@@ -5,8 +5,73 @@ import { URL } from 'url';
 import { DocumentService } from '../services/document.service';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';
+import cloudinary from '../config/cloudinary';
+import { env } from '../config/env';
 
 const documentService = new DocumentService();
+
+// Returns a signed Cloudinary upload credential so the frontend can upload
+// directly to Cloudinary, bypassing Vercel's 4.5 MB serverless body limit.
+export const getUploadSignature = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    const timestamp = Math.round(Date.now() / 1000);
+    const params = { timestamp, folder: 'nexus/documents' };
+    const signature = cloudinary.utils.api_sign_request(params, env.CLOUDINARY_API_SECRET);
+
+    res.json({
+      success: true,
+      data: {
+        signature,
+        timestamp,
+        cloudName: env.CLOUDINARY_CLOUD_NAME,
+        apiKey: env.CLOUDINARY_API_KEY,
+        folder: 'nexus/documents',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Saves document metadata after the frontend has uploaded the file directly to Cloudinary.
+export const saveDocument = async (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) throw new AppError('User not authenticated', 401);
+
+    const { title, description, fileUrl, fileType, fileSize, visibility } = req.body;
+
+    if (!fileUrl) throw new AppError('fileUrl is required', 400);
+    if (!title)   throw new AppError('title is required', 400);
+
+    const document = await documentService.createDocument({
+      title,
+      description,
+      fileUrl,
+      fileType: fileType || 'application/octet-stream',
+      fileSize: Number(fileSize) || 0,
+      uploadedBy: req.user.id,
+      visibility: visibility || 'PRIVATE',
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Document saved successfully',
+      data: document,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const uploadDocument = async (
   req: AuthRequest,

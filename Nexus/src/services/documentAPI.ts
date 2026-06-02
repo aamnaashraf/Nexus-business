@@ -37,6 +37,22 @@ export interface DocumentsResponse {
 }
 
 export const documentAPI = {
+  getUploadSignature: async (): Promise<{
+    signature: string; timestamp: number;
+    cloudName: string; apiKey: string; folder: string;
+  }> => {
+    const response = await api.get('/documents/sign-upload');
+    return response.data.data;
+  },
+
+  saveDocument: async (data: {
+    title: string; description?: string; fileUrl: string;
+    fileType: string; fileSize: number; visibility: string;
+  }): Promise<DocumentResponse> => {
+    const response = await api.post('/documents/save', data);
+    return response.data;
+  },
+
   uploadDocument: async (formData: FormData): Promise<DocumentResponse> => {
     const token = localStorage.getItem('nexus_token');
     const response = await api.post(`${API_BASE_URL}/documents/upload`, formData, {
