@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { AuthService } from '../services/auth.service';
 import { AppError } from '../middleware/errorHandler';
 import { AuthRequest } from '../middleware/auth';

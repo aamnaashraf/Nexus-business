@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { OtpService } from '../services/otp.service';
 import { AppError } from '../middleware/errorHandler';
 import { prisma } from '../config/database';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import { env } from '../config/env';
 
 const otpService = new OtpService();
