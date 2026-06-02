@@ -5,7 +5,9 @@
       "src": "src/index.ts",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["prisma/**"]
+        "includeFiles": ["prisma/**"],
+        "bodyParser": false,
+        "maxLambdaSize": "50mb"
       }
     }
   ],

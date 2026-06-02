@@ -127,7 +127,7 @@ export const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
                       <p className="pl-1">or drag and drop</p>
                     </div>
                     <p className="text-xs text-gray-500">
-                      PDF, DOC, DOCX, XLS, XLSX, JPG, PNG up to 10MB
+                      PDF, DOC, DOCX, XLS, XLSX, JPG, PNG up to 4MB
                     </p>
                     {file && (
                       <div className="mt-2 flex items-center justify-center text-sm text-gray-700">

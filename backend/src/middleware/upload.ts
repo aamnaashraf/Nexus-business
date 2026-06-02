@@ -15,8 +15,8 @@ const ALLOWED_FILE_TYPES = [
   'image/jpg',
 ];
 
-// Max file size: 10MB
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
+// Max file size: 4MB (Vercel serverless hard cap is 4.5MB)
+const MAX_FILE_SIZE = 4 * 1024 * 1024;
 
 // Use memory storage
 const storage = multer.memoryStorage();
@@ -165,7 +165,7 @@ export const uploadSignatureToCloudinary = async (
 export const handleMulterError = (err: any, _req: any, _res: any, next: any) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
-      return next(new AppError('File size too large. Maximum size is 10MB', 400));
+      return next(new AppError('File size too large. Maximum size is 4MB', 400));
     }
     return next(new AppError(err.message, 400));
   }
